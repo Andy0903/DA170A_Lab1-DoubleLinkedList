@@ -15,12 +15,15 @@ class Link
 	friend class Link<T>;
 
 public:
-	Link()	{	}
+	Link() : next(nullptr), prev(nullptr) {}
+
 	virtual ~Link() = default;
+
 	T* Next()
 	{
 		return static_cast<T*>(next);
 	}
+
 	T* Prev()
 	{
 		return static_cast<T*>(prev);
@@ -45,12 +48,22 @@ public:
 
 	T* InsertBefore(T *TToInsert)
 	{
+		Link *previousPrev = prev;
+		prev = TToInsert;
+		TToInsert->next = previousPrev;
+
 		assert(next->prev == this && prev->next == this);
+		return Prev();
 	}
 
 	T* DeleteAfter()
 	{
+		Link *toDelete = next;
+		next = next->next;
+		delete toDelete;
+		toDelete = nullptr;
 		assert(next->prev == this && prev->next == this);
+		return Next();
 	}
 
 	bool Invariant()
@@ -62,7 +75,17 @@ public:
 	//FindNext use the function Match in the T class to see if it is a hit.
 	T* FindNext(const Arg &searchFor)
 	{
-		assert(next->prev == this && prev->next == this);
+		T *current = static_cast<T*>(this);
+		if (current->Match(searchFor))
+		{
+			return current;
+		}
+		else if (this->next != nullptr)
+		{
+			this->FindNext(searchFor);
+		}
+
+		return nullptr;
 	}
 
 	virtual std::ostream& Print(std::ostream &cout) { return cout; }
@@ -74,25 +97,32 @@ class List : public Link<T>
 	std::ostream& Print(std::ostream& cout)
 	{
 	}
+
 public:
 	List()
 	{
 	}
+
 	T* First()
 	{
 	}
+
 	T* Last()
 	{
 	}
+
 	T* PushFront(T *item)
 	{
 	}
+
 	T* PopFront()
 	{
 	}
+
 	T* PushBack(T *item)
 	{
 	}
+
 	template<class Arg>
 	T* FindFirst(const Arg& searchFor) { return FindNext(searchFor); }
 
