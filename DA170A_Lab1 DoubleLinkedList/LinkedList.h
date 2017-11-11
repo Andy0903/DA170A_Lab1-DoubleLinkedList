@@ -4,15 +4,15 @@
 
 //TODO const correctness
 
-//template<class T>
-//class List;
+template<class T>
+class List;
 
 template <class  T>
 class Link
 {
 	Link *next;
 	Link *prev;
-	friend class Link<T>;
+	friend class List<T>;
 
 public:
 	Link() : next(nullptr), prev(nullptr) {}
@@ -72,7 +72,7 @@ public:
 	}
 
 	template<class Arg>
-	//FindNext use the function Match in the T class to see if it is a hit.
+	//Uses the function "Match" in T.
 	T* FindNext(const Arg &searchFor)
 	{
 		T *current = static_cast<T*>(this);
@@ -82,7 +82,7 @@ public:
 		}
 		else if (this->next != nullptr)
 		{
-			this->FindNext(searchFor);
+			this->Next()->FindNext(searchFor);
 		}
 
 		return nullptr;
@@ -96,23 +96,43 @@ class List : public Link<T>
 {
 	std::ostream& Print(std::ostream& cout)
 	{
+		Link<T> *current = static_cast<Link<T>*>(this);
+		current->Print(cout);
+
+		if (current->next != nullptr)
+		{
+			current->next->Print(cout);
+		}
 	}
 
 public:
-	List()
-	{
-	}
+	List() = default;
 
 	T* First()
 	{
+		Link<T> *current = static_cast<Link<T>*>(this);
+		while (current->prev != nullptr)
+		{
+			current = current->prev;
+		}
+		return static_cast<T*>(current);
 	}
 
 	T* Last()
 	{
+		Link<T> *current = static_cast<Link<T>*>(this);
+		while (current->next != nullptr)
+		{
+			current = current->next;
+		}
+		return static_cast<T*>(current);
 	}
 
 	T* PushFront(T *item)
 	{
+		T* front = First();
+		item->next = front;
+		front->prev = item;
 	}
 
 	T* PopFront()
@@ -128,7 +148,5 @@ public:
 
 	friend std::ostream& operator<<(std::ostream &cout, List &list) { return list.Print(cout); }
 
-	void Check()
-	{
-	}
+	//void Check() {}
 };

@@ -2,7 +2,8 @@
 #include <assert.h>
 #include <iostream>
 
-class Node :public Link<Node> {
+class Node :public Link<Node> 
+{
 public:
     float data;
     Node(float v = 0) :data(v) {}
