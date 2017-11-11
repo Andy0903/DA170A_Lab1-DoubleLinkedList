@@ -68,7 +68,10 @@ public:
 
 	bool Invariant()
 	{
-		return (next->prev == this && prev->next == this);
+		if (next != nullptr && next->prev != nullptr)
+		{
+			return (next->prev == this && prev->next == this);
+		}
 	}
 
 	template<class Arg>
@@ -94,14 +97,18 @@ public:
 template<class T>
 class List : public Link<T>
 {
-	std::ostream& Print(std::ostream& cout)
+	std::ostream& Print(std::ostream& cout) override
 	{
-		Link<T> *current = static_cast<Link<T>*>(this);
-		current->Print(cout);
+		//Link<T> *current = static_cast<Link<T>*>(this);
+		this->Link<T>::Print(cout);
 
-		if (current->next != nullptr)
+		if (this->next != nullptr) //this var current vvv
 		{
-			current->next->Print(cout);
+			return this->next->Print(cout);
+		}
+		else
+		{
+			this->Link<T>::Print(cout);
 		}
 	}
 
@@ -133,14 +140,23 @@ public:
 		T* front = First();
 		item->next = front;
 		front->prev = item;
+		return item;
 	}
 
 	T* PopFront()
 	{
+		T* front = First();
+		front->next->prev = nullptr;
+		front->next = nullptr;
+		return front;
 	}
 
 	T* PushBack(T *item)
 	{
+		T* back = Last();
+		back->next = item;
+		item->prev = back;
+		return item;
 	}
 
 	template<class Arg>

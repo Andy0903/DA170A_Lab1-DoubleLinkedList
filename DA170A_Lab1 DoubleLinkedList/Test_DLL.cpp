@@ -1,6 +1,11 @@
+#ifdef _DEBUG
+#ifndef DBG_NEW
+#define DBG_NEW new ( _NORMAL_BLOCK , __FILE__ , __LINE__ )
+#define new DBG_NEW
+#endif
+#endif  // _DEBUG
+
 #include "LinkedList.h"
-#include <assert.h>
-#include <iostream>
 
 class Node :public Link<Node> 
 {
@@ -18,7 +23,8 @@ template Link<Node>;    //Detta tvingar fram att allting i Link kompileras
 template List<Node>;    //Detta tvingar fram att allting i List kompileras
 
 
-void TestDLL() {
+void TestDLL() 
+{
     List<Node> myList;
     assert(myList.Invariant());
     Node * nodeA3 = myList.PushFront(new Node(3));
@@ -63,4 +69,13 @@ void TestDLL() {
     std::cout << myList << "end";
     assert(myList.Invariant());
     std::cin.get();
+}
+
+int main()
+{
+	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+	TestDLL();
+
+	std::cin.get();
+	return 0;
 }
