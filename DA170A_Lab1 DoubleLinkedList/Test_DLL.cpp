@@ -1,6 +1,6 @@
-#include "Link.hpp"
-#include "List.hpp"
-#include "TestDLL.h"
+#include "LinkedList.h"
+#include <assert.h>
+#include <iostream>
 
 class Node :public Link<Node> {
 public:
