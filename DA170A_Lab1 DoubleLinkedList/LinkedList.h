@@ -2,7 +2,7 @@
 #include <iostream>
 #include <assert.h>
 
-//TODO const correctness
+//const correctness & Link<T>
 
 template<class T>
 class List;
@@ -11,158 +11,220 @@ template <class  T>
 class Link
 {
 	Link *next;
-	Link *prev;
+	Link *prev; //Link<T>
 	friend class List<T>;
 
 public:
 	Link() : next(nullptr), prev(nullptr) {}
-
 	virtual ~Link() = default;
 
-	T* Next()
-	{
-		return static_cast<T*>(next);
-	}
+	T* Next() { return static_cast<T*>(next); }
+	T* Prev() { return static_cast<T*>(prev); }
 
-	T* Prev()
-	{
-		return static_cast<T*>(prev);
-	}
+	const T* Next() const { return static_cast<const T*>(next); }
+	const T* Prev() const { return static_cast<const T*>(prev); }
 
 	T* InsertAfter(T *TToInsert)
 	{
-		if (next == nullptr)
+		if (next != nullptr)
 		{
-			next = TToInsert;
-		}
-		else
-		{
-			Link *previouslyNext = next;
-			next = TToInsert;
-			TToInsert->next = previouslyNext;
+			next->prev = TToInsert;
+			TToInsert->next = next;
 		}
 
-		assert(next->prev == this && prev->next == this);
+		next = TToInsert;
+		TToInsert->prev = this;
+
+		assert(Invariant());
 		return Next();
 	}
 
 	T* InsertBefore(T *TToInsert)
 	{
-		Link *previousPrev = prev;
-		prev = TToInsert;
-		TToInsert->next = previousPrev;
+		if (prev != nullptr)
+		{
+			prev->next = TToInsert;
+			TToInsert->prev = prev;
+		}
 
-		assert(next->prev == this && prev->next == this);
+		prev = TToInsert;
+		TToInsert->next = this;
+
+		assert(Invariant());
 		return Prev();
 	}
 
 	T* DeleteAfter()
 	{
-		Link *toDelete = next;
+		T *toDelete = Next();
+
+		if (toDelete == nullptr)
+		{
+			return nullptr;
+		}
+
 		next = next->next;
-		delete toDelete;
-		toDelete = nullptr;
-		assert(next->prev == this && prev->next == this);
-		return Next();
+
+		if (next != nullptr)
+		{
+			next->prev = this;
+		}
+
+		toDelete->next = nullptr;
+		toDelete->prev = nullptr;
+		assert(Invariant());
+		return toDelete;
 	}
 
-	bool Invariant()
+	virtual bool Invariant() const
 	{
-		if (next != nullptr && next->prev != nullptr)
+		return (next == nullptr || next->prev == this) && (prev == nullptr || prev->next == this);
+	}
+
+	template<class Arg>
+	//Uses the function "Match" in T.
+	const T* FindNext(const Arg &searchFor) const
+	{
+		if (next != nullptr)
 		{
-			return (next->prev == this && prev->next == this);
+			if (Next()->Match(searchFor))
+			{
+				return Next();
+			}
+			return Next()->FindNext(searchFor);
 		}
+
+		return nullptr;
 	}
 
 	template<class Arg>
 	//Uses the function "Match" in T.
 	T* FindNext(const Arg &searchFor)
 	{
-		T *current = static_cast<T*>(this);
-		if (current->Match(searchFor))
+		if (next != nullptr)
 		{
-			return current;
-		}
-		else if (this->next != nullptr)
-		{
-			this->Next()->FindNext(searchFor);
+			if (Next()->Match(searchFor))
+			{
+				return Next();
+			}
+			return Next()->FindNext(searchFor);
 		}
 
 		return nullptr;
 	}
 
-	virtual std::ostream& Print(std::ostream &cout) { return cout; }
+	virtual std::ostream& Print(std::ostream &cout) const
+	{
+		return cout;
+	}
 };
 
 template<class T>
 class List : public Link<T>
 {
-	std::ostream& Print(std::ostream& cout) override
+	std::ostream& Print(std::ostream& cout) const override
 	{
-		//Link<T> *current = static_cast<Link<T>*>(this);
-		this->Link<T>::Print(cout);
+		Link<T> *current = next;
+		while (current != nullptr && current != this)
+		{
+			T *currentNode = static_cast<T*>(current);
+			currentNode->Print(cout);
+			current = current->next;
+		}
 
-		if (this->next != nullptr) //this var current vvv
-		{
-			return this->next->Print(cout);
-		}
-		else
-		{
-			this->Link<T>::Print(cout);
-		}
+		return cout;
 	}
 
 public:
 	List() = default;
-
-	T* First()
+	~List()
 	{
-		Link<T> *current = static_cast<Link<T>*>(this);
-		while (current->prev != nullptr)
+		T *toDelete = PopFront();
+		while (toDelete != nullptr)
 		{
-			current = current->prev;
+			delete toDelete;
+			toDelete = PopFront();
 		}
-		return static_cast<T*>(current);
 	}
 
-	T* Last()
-	{
-		Link<T> *current = static_cast<Link<T>*>(this);
-		while (current->next != nullptr)
-		{
-			current = current->next;
-		}
-		return static_cast<T*>(current);
-	}
+	T* First() { return Next(); }
+	T* Last() { return Prev(); }
+
+	const T* First() const { return Next(); }
+	const T* Last() const { return Prev(); }
 
 	T* PushFront(T *item)
 	{
-		T* front = First();
-		item->next = front;
-		front->prev = item;
+		if (next != nullptr)
+		{
+			next->prev = item;
+			item->next = next;
+		}
+
+		if (prev == nullptr)
+		{
+			prev = item;
+		}
+
+		next = item;
+
+		assert(Invariant());
 		return item;
 	}
 
 	T* PopFront()
 	{
-		T* front = First();
-		front->next->prev = nullptr;
-		front->next = nullptr;
-		return front;
+		return DeleteAfter();
 	}
 
 	T* PushBack(T *item)
 	{
-		T* back = Last();
-		back->next = item;
-		item->prev = back;
+		if (prev != nullptr)
+		{
+			prev->next = item;
+			item->prev = prev;
+		}
+
+		if (next == nullptr)
+		{
+			next = item;
+		}
+
+		prev = item;
+
+		assert(Invariant());
 		return item;
 	}
 
+	bool Invariant() const override
+	{
+		Link<T> *current = next;
+		while (current != nullptr)
+		{
+			if (!current->Invariant())
+			{
+				return false;
+			}
+			current = current->next;
+		}
+
+		return true;
+	}
+
 	template<class Arg>
-	T* FindFirst(const Arg& searchFor) { return FindNext(searchFor); }
+	const T* FindFirst(const Arg& searchFor) const
+	{
+		return FindNext(searchFor);
+	}
 
-	friend std::ostream& operator<<(std::ostream &cout, List &list) { return list.Print(cout); }
+	template<class Arg>
+	T* FindFirst(const Arg& searchFor)
+	{
+		return FindNext(searchFor);
+	}
 
-	//void Check() {}
+	friend std::ostream& operator<<(std::ostream &cout, List &list)
+	{
+		return list.Print(cout);
+	}
 };
